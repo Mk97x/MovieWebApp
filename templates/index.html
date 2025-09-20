@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Movie Web App{% endblock %}
+
+{% block content %}
+    <div class="users-section">
+        <h1>Users</h1>
+        
+        {% if users_with_counts %}
+            <div class="users-grid">
+                {% for user_data in users_with_counts %}
+                    <div class="user-card">
+                        <h3><a href="{{ url_for('user_movies', user_id=user_data.user.id) }}">{{ user_data.user.name }}</a></h3>
+                        <p class="user-movie-count">
+                            {{ user_data.movie_count }} movies
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-users">
+                <p>No users found. Add your first user below!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="add-user-section">
+        <h2>Add New User</h2>
+        <form action="{{ url_for('create_user') }}" method="post" class="add-user-form">
+            <div class="form-group">
+                <label for="name">User Name:</label>
+                <input type="text" id="name" name="name" required placeholder="Enter user name">
+            </div>
+            <button type="submit" class="btn btn-primary">Add User</button>
+        </form>
+    </div>
+{% endblock %}
