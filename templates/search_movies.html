@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Search Movies - Movie Web App{% endblock %}
+
+{% block content %}
+    <div class="form-container">
+        <div class="form-header">
+            <h1>Search Movies</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Home</a>
+        </div>
+
+        <!-- Search Form -->
+        <form action="{{ url_for('search_movies_route') }}" method="get" class="movie-form">
+            <div class="form-group">
+                <label for="title">Movie Title:</label>
+                <input type="text" id="title" name="title" required placeholder="Enter movie title" value="{{ search_term or '' }}">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        <!-- Search Results -->
+        {% if search_term %}
+            <h2>Search Results for "{{ search_term }}"</h2>
+            
+            {% if movies %}
+                <div class="movies-grid">
+                    {% for movie in movies %}
+                        <div class="movie-card">
+                            <div class="movie-info">
+                                {% if movie.poster and movie.poster != 'N/A' %}
+                                    <img src="{{ movie.poster }}" alt="{{ movie.title }} Poster" class="movie-poster-small">
+                                {% endif %}
+                                <h3>{{ movie.title }}</h3>
+                                <p class="movie-year">{{ movie.year }}</p>
+                                {% if movie.type %}
+                                    <p class="movie-type">{{ movie.type }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="movie-actions">
+                                <a href="{{ url_for('add_movie_from_omdb', user_id=request.args.get('user_id', 1), imdb_id=movie.imdb_id) }}" 
+                                   class="btn btn-primary">Add to Favorites</a>
+                                <a href="{{ url_for('movie_details', imdb_id=movie.imdb_id) }}" 
+                                   class="btn btn-secondary">Details</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-movies">
+                    <p>No movies found for "{{ search_term }}". Try a different search term.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}

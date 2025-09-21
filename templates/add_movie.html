@@ -9,20 +9,35 @@
             <a href="{{ url_for('user_movies', user_id=user.id) }}" class="btn btn-secondary">← Back to Movies</a>
         </div>
 
+        <!-- OMDb Search Form -->
+        <form action="{{ url_for('search_movies_route') }}" method="get" class="movie-form mb-2">
+            <h3>Search Movie via OMDb</h3>
+            <div class="form-group">
+                <label for="search_title">Movie Title:</label>
+                <input type="text" id="search_title" name="title" required placeholder="Search for a movie...">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Search OMDb</button>
+        </form>
+
+        <hr>
+
+        <!-- Manual Add Form -->
         <form action="{{ url_for('add_movie', user_id=user.id) }}" method="post" class="movie-form">
+            <h3>Or Add Manually</h3>
             <div class="form-group">
                 <label for="title">Movie Title *</label>
                 <input type="text" id="title" name="title" required>
             </div>
 
             <div class="form-group">
-                <label for="director">Director *</label>
-                <input type="text" id="director" name="director" required>
+                <label for="director">Director</label>
+                <input type="text" id="director" name="director">
             </div>
 
             <div class="form-group">
-                <label for="year">Year *</label>
-                <input type="number" id="year" name="year" min="1800" max="2030" required>
+                <label for="year">Year</label>
+                <input type="number" id="year" name="year" min="1800" max="2030">
             </div>
 
             <div class="form-group">

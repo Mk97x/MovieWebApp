@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from models import db, User, Movie
 from data_manager import DataManager
+from omdb_api import fetch_movie, search_movies, get_movie_details_by_id
 import os
 
 
@@ -42,28 +43,7 @@ def user_movies(user_id):
         return render_template('user_movies.html', user=user, movies=movies)
     return "User not found", 404
 
-@app.route('/users/<int:user_id>/movies', methods=['POST'])
-def add_movie(user_id):
-    """
-    Add a new movie to a user's favorites
-    Extracts movie data from form and adds it to the database
-    """
-    # Get form data
-    title = request.form.get('title')
-    director = request.form.get('director')
-    year = request.form.get('year')
-    rating = request.form.get('rating')
-    
-    if title and director and year:
-        movie_data = {
-            'title': title,
-            'director': director,
-            'year': int(year),
-            'rating': float(rating) if rating else None
-        }
-        data_manager.add_movie(movie_data, user_id)
-    
-    return redirect(url_for('user_movies', user_id=user_id))
+
 
 @app.route('/users/<int:user_id>/movies/<int:movie_id>/update', methods=['POST'])
 def update_movie(user_id, movie_id):
@@ -113,6 +93,76 @@ def edit_movie_form(user_id, movie_id):
     if user and movie:
         return render_template('edit_movie.html', user=user, movie=movie)
     return "User or movie not found", 404
+
+@app.route('/users/<int:user_id>/delete', methods=['POST'])
+def delete_user(user_id):
+    """Delete a user and all their movies"""
+    data_manager.delete_user(user_id)
+    return redirect(url_for('index'))
+
+@app.route('/movies/search')
+def search_movies_route():
+    """Search for movies using OMDb API"""
+    search_term = request.args.get('title')
+    user_id = request.args.get('user_id')
+    movies = []
+    if search_term:
+        movies = search_movies(search_term, 10)
+    return render_template('search_movies.html', movies=movies, search_term=search_term, user_id=user_id)
+
+@app.route('/movies/details/<imdb_id>')
+def movie_details(imdb_id):
+    """Show detailed movie information"""
+    movie_data = get_movie_details_by_id(imdb_id)
+    if movie_data:
+        return render_template('movie_details.html', movie=movie_data)
+    return "Movie not found", 404
+
+@app.route('/users/<int:user_id>/movies/add_from_omdb/<imdb_id>')
+def add_movie_from_omdb(user_id, imdb_id):
+    """Add a movie to user's favorites using OMDb data"""
+    user = data_manager.get_user_by_id(user_id)
+    if not user:
+        return "User not found", 404
+        
+    movie_data = get_movie_details_by_id(imdb_id)
+    if movie_data:
+        movie_info = {
+            'title': movie_data['title'],
+            'director': movie_data['director'],
+            'year': movie_data['year'] or 0,
+            'rating': movie_data['rating']
+        }
+        data_manager.add_movie(movie_info, user_id)
+    
+    return redirect(url_for('user_movies', user_id=user_id))
+
+@app.route('/users/<int:user_id>/movies', methods=['POST'])
+def add_movie(user_id):
+    """Add movie to user's favorites - try OMDb first, then fallback to manual input"""
+    title = request.form.get('title')
+    
+    if title:
+        movie_data = fetch_movie(title)
+        
+        if movie_data:
+            movie_info = {
+                'title': movie_data['title'],
+                'director': movie_data['director'],
+                'year': movie_data['year'] or 0,
+                'rating': movie_data['rating']
+            }
+        else:
+            movie_info = {
+                'title': title,
+                'director': request.form.get('director', 'Unknown'),
+                'year': int(request.form.get('year', 0)),
+                'rating': float(request.form.get('rating')) if request.form.get('rating') else None
+            }
+        
+        data_manager.add_movie(movie_info, user_id)
+    
+    return redirect(url_for('user_movies', user_id=user_id))
 
 if __name__ == '__main__':
     with app.app_context():
